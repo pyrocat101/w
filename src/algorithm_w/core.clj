@@ -3,7 +3,7 @@
         [clojure.set :only (union difference)]))
 
 (defn mapval [f m]
-  (into {} (for [[k v] m] [k (f m)])))
+  (into {} (for [[k v] m] [k (f v)])))
 
 (derive clojure.lang.IPersistentMap ::type-env)
 (derive clojure.lang.Keyword        ::type-const)
