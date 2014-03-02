@@ -56,14 +56,11 @@
 (defn generalize [τ env]
   [:forall (difference (ftv τ) (ftv env)) τ])
 
-(defn instantiate
-  ([σ env]
-   (instantiate σ))
-  ([σ]
-   (match (vec σ)
-     [:forall vars τ]
-     (let [S (into {} (for [v vars] [v (fresh-var)]))]
-       (apply-subst S τ)))))
+(defn instantiate [σ]
+  (match (vec σ)
+    [:forall vars τ]
+    (let [S (into {} (for [v vars] [v (fresh-var)]))]
+      (apply-subst S τ))))
 
 ;; unification
 
