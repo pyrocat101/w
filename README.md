@@ -1,14 +1,10 @@
-# algorithm-w
+# Algorithm W
 
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+An implementation of algorithm W for Hindley-Milner polymorphic type inference.
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014 Linjie Ding
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
