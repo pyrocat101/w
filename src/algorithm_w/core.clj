@@ -135,25 +135,41 @@
 
 ;;; desugar
 
+(derive clojure.lang.ISeq ::list)
+
+(defmulti desugar type)
+
+(defmethod desugar ::list [e]
+  (match (vec e)
+    [fn [x] body] ['fn [x] (desugar body)]
+    [fn [x & more] body] ['fn [x] (desugar ['fn more body])]
+    [x y] [(desugar x) (desugar y)]
+    [x y & more] (desugar (cons (map desugar [x y]) more))
+    :else e))
+
+(defmethod desugar :default [e] e)
+
 ;;; type inference
 
 (def ^:dynamic *default-type-env*
-  {'+ '[:forall #{} [:int -> [:int -> :int]]]})
+  {'+  '[:forall #{} [:int -> [:int -> :int]]]
+   'if '[:forall #{a} [:bool -> [a -> [a -> a]]]]})
 
 (defn infer
   ([e]
    (infer e *default-type-env*))
   ([e env]
-   (let [[t S] (W e env)]
+   (let [[t S] (W (desugar e) env)]
      (apply-subst S t))))
 
 ;;; tests
 
-(infer '+)
-(infer '(+ 1))
-(infer '(fn [x] x))
-(infer '(fn [x] ((+ x) x)))
-(infer '(let [f (fn [x] x)] f))
+;; (infer '+)
+;; (infer '(+ 1 1))
+;; (infer '(fn [x] x))
+;; (infer '(fn [x] (+ x x)))
+;; (infer '(let [f (fn [x] x)] f))
+;; (infer '(if true 42 (+ 333 333)))
 
 ;; one-liner to clear current namespace
 ;; (map #(ns-unmap *ns* %) (keys (ns-interns *ns*)))
