@@ -154,15 +154,17 @@
 ;;; desugar
 
 (derive clojure.lang.ISeq ::list)
+(derive clojure.lang.IPersistentVector ::list)
 
 (defmulti desugar type)
 
 (defmethod desugar ::list [e]
   (match (vec e)
-    [fn [x] body] ['fn [x] (desugar body)]
-    [fn [x & more] body] ['fn [x] (desugar ['fn more body])]
+    ['fn [x] body] ['fn [x] (desugar body)]
+    ['fn [x & more] body] ['fn [x] (desugar ['fn more body])]
+    ['let & more] e
     [x y] [(desugar x) (desugar y)]
-    [x y & more] (desugar (cons (map desugar [x y]) more))
+    [x y & more] (desugar (cons [x y] more))
     :else e))
 
 (defmethod desugar :default [e] e)
