@@ -119,7 +119,11 @@
 (derive java.lang.Long      ::int)
 (derive java.lang.Boolean   ::bool)
 
-(defmulti W (fn [x y] (type x)))
+(defmulti W
+  (fn [x y]
+    (if (and (seq? x) (empty? x))
+      ::nil
+      (type x))))
 
 (defmethod W ::var [v env]
   (if-let [σ (get env v)]
@@ -128,6 +132,9 @@
 
 (defmethod W ::int  [e env] [:int  {}])
 (defmethod W ::bool [e env] [:bool {}])
+
+(defmethod W ::nil  [e env]
+  [(instantiate '[:forall #{a} [:list a]]) {}])
 
 (defmethod W :default [e env]
   (match (vec e)
@@ -163,8 +170,12 @@
 ;;; type inference
 
 (def ^:dynamic *default-type-env*
-  {'+  '[:forall #{} [:int -> [:int -> :int]]]
-   'if '[:forall #{a} [:bool -> [a -> [a -> a]]]]})
+  {'+      '[:forall #{}  [:int -> [:int -> :int]]]
+   'if     '[:forall #{a} [:bool -> [a -> [a -> a]]]]
+   'empty? '[:forall #{a} [[:list a] -> :bool]]
+   'cons   '[:forall #{a} [a -> [[:list a] -> [:list a]]]]
+   'first  '[:forall #{a} [[:list a] -> a]]
+   'rest   '[:forall #{a} [[:list a] -> [:list a]]]})
 
 (defn infer
   ([e]
@@ -178,9 +189,15 @@
 ;; (infer '+)
 ;; (infer '(+ 1 1))
 ;; (infer '(fn [x] x))
-;; (infer '(fn [x] (+ x x)))
+;; (infer '(fn [x y] (+ x y)))
 ;; (infer '(let [f (fn [x] x)] f))
 ;; (infer '(if true 42 (+ 333 333)))
+;; (infer '())
+;; (infer '(empty? ()))
+;; (infer '(empty? (cons 1 ())))
+;; (infer '(cons 1 ()))
+;; (infer '(first (cons 1 ())))
+;; (infer '(rest (cons 1 ())))
 
 ;; one-liner to clear current namespace
 ;; (map #(ns-unmap *ns* %) (keys (ns-interns *ns*)))
