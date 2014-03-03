@@ -160,11 +160,12 @@
 
 (defmethod desugar ::list [e]
   (match (vec e)
-    ['fn [x] body] ['fn [x] (desugar body)]
-    ['fn [x & more] body] ['fn [x] (desugar ['fn more body])]
-    ['let & more] e
-    [x y] [(desugar x) (desugar y)]
-    [x y & more] (desugar (cons [x y] more))
+    ['fn [x] body]           ['fn [x] (desugar body)]
+    ['fn [x & more] body]    (desugar ['fn [x] ['fn more body]])
+    ['let [n v] body] ['let  [n (desugar v)] (desugar body)]
+    ['let [n v & more] body] (desugar ['let [n v] ['let more body]])
+    [x y]                    [(desugar x) (desugar y)]
+    [x y & more]             (desugar (cons [x y] more))
     :else e))
 
 (defmethod desugar :default [e] e)
