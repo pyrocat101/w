@@ -22,7 +22,8 @@
 (defmethod ftv :default [t]
   (match (vec t)
     [t1 '-> t2]      (union (ftv t1) (ftv t2))
-    [:forall vars τ] (difference (ftv τ) vars)))
+    [:forall vars τ] (difference (ftv τ) vars)
+    [_ & τs]         (apply union (map ftv τs))))
 
 (defn fresh-var [] (gensym))
 
@@ -41,7 +42,8 @@
 (defmethod apply-subst :default [S t]
   (match (vec t)
     [t1 '-> t2]      [(apply-subst S t1) '-> (apply-subst S t2)]
-    [:forall vars τ] [:forall vars (apply-subst (dissoc S vars) τ)]))
+    [:forall vars τ] [:forall vars (apply-subst (dissoc S vars) τ)]
+    [n & τs]         (cons n (map #(apply-subst S %) τs))))
 
 (defn compose
   "Compose type substitutions, right-to-left, i.e. should have
@@ -90,11 +92,20 @@
     (throw (cannot-unify t1 t2))))
 
 (defmethod unify :default [t1 t2]
-  (match [t1 t2]
-    [[x1 '-> y1] [x2 '-> y2]] (let [S1 (unify x1 x2)
-                                    S2 (unify (apply-subst S1 y1)
-                                              (apply-subst S1 y2))]
-                                (compose S2 S1))
+  (match [(vec t1) (vec t2)]
+    [[x1 '-> y1] [x2 '-> y2]]
+    (let [S1 (unify x1 x2)
+          S2 (unify (apply-subst S1 y1) (apply-subst S1 y2))]
+      (compose S2 S1))
+    [[n1 & τs1] [n2 & τs2]]
+    (if (and (= n1 n2) (= (count τs1) (count τs2)))
+      (reduce (fn [S1 [τ1 τ2]]
+                (let [S2 (unify (apply-subst S1 τ1)
+                                (apply-subst S1 τ2))]
+                  (compose S2 S1)))
+              {}
+              (map vector τs1 τs2))
+      (throw (cannot-unify t1 t2)))
     :else (throw (cannot-unify t1 t2))))
 
 (prefer-method unify [::type-var ::type-var] [::type-var ::_])
