@@ -174,11 +174,15 @@
 
 (def ^:dynamic *default-type-env*
   {'+      '[:forall #{}  [:int -> [:int -> :int]]]
+   '-      '[:forall #{}  [:int -> [:int -> :int]]]
+   '*      '[:forall #{}  [:int -> [:int -> :int]]]
    'if     '[:forall #{a} [:bool -> [a -> [a -> a]]]]
    'empty? '[:forall #{a} [[:list a] -> :bool]]
    'cons   '[:forall #{a} [a -> [[:list a] -> [:list a]]]]
    'first  '[:forall #{a} [[:list a] -> a]]
-   'rest   '[:forall #{a} [[:list a] -> [:list a]]]})
+   'rest   '[:forall #{a} [[:list a] -> [:list a]]]
+   '=      '[:forall #{a} [a -> [a -> :bool]]]
+   'fix    '[:forall #{a} [[a -> a] -> a]]})
 
 (defn infer
   ([e]
@@ -201,6 +205,13 @@
 ;; (infer '(cons 1 ()))
 ;; (infer '(first (cons 1 ())))
 ;; (infer '(rest (cons 1 ())))
+;; (infer
+;;  '(let [fact (fix
+;;               (fn [fact x]
+;;                 (if (= x 1)
+;;                   1
+;;                   (* x (fact (- x 1))))))]
+;;     (fact 10)))
 
 ;; one-liner to clear current namespace
 ;; (map #(ns-unmap *ns* %) (keys (ns-interns *ns*)))

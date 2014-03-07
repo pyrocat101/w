@@ -17,6 +17,14 @@ Use the Source, Luke!
 (infer '(cons 1 ())) ;; (:list :int)
 (infer '(first (cons 1 ()))) ;; :int
 (infer '(rest (cons 1 ()))) ;; (:list :int)
+;; fix point recursion
+(infer
+ '(let [fact (fix
+              (fn [fact x]
+                (if (= x 1)
+                  1
+                  (* x (fact (- x 1))))))]
+    (fact 10)))
 ```
 
 ## References
