@@ -1,6 +1,7 @@
 (ns algorithm-w.core
   (:use [clojure.core.match :only (match)]
-        [clojure.set :only (union difference)]))
+        [clojure.set :only (union difference)]
+        [clojure.walk :only (postwalk)]))
 
 (defn mapval [f m]
   (into {} (for [[k v] m] [k (f v)])))
@@ -25,7 +26,10 @@
     [:forall vars τ] (difference (ftv τ) vars)
     [_ & τs]         (apply union (map ftv τs))))
 
-(defn fresh-var [] (gensym))
+(defn fresh-var [] (gensym "__type__"))
+
+(defn type-var? [x]
+  (and (symbol? x) (.startsWith (str x) "__type__")))
 
 ;;; substitution
 
@@ -169,6 +173,23 @@
     :else e))
 
 (defmethod desugar :default [e] e)
+
+;;; type pretty-print
+
+(defn pretty-print [form]
+  (let [counter (atom 0)
+        vars    (transient {})]
+    (postwalk (fn [x]
+                (if (type-var? x)
+                  (if-let [v (get vars x)]
+                    v
+                    (do
+                      (let [v (symbol (str "t" @counter))]
+                        (assoc! vars x v)
+                        (swap! counter inc)
+                        v)))
+                  x))
+              form)))
 
 ;;; type inference
 
