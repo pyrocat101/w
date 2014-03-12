@@ -210,29 +210,65 @@
    (infer e *default-type-env*))
   ([e env]
    (let [[t S] (W (desugar e) env)]
-     (apply-subst S t))))
+     (->> (apply-subst S t)
+          (pretty-print)))))
 
 ;;; tests
 
-;; (infer '+)
-;; (infer '(+ 1 1))
-;; (infer '(fn [x] x))
-;; (infer '(fn [x y] (+ x y)))
-;; (infer '(let [f (fn [x] x)] f))
-;; (infer '(if true 42 (+ 333 333)))
-;; (infer '())
-;; (infer '(empty? ()))
-;; (infer '(empty? (cons 1 ())))
-;; (infer '(cons 1 ()))
-;; (infer '(first (cons 1 ())))
-;; (infer '(rest (cons 1 ())))
-;; (infer
-;;  '(let [fact (fix
-;;               (fn [fact x]
-;;                 (if (= x 1)
-;;                   1
-;;                   (* x (fact (- x 1))))))]
-;;     (fact 10)))
+(infer '+)
+; => [:int -> [:int -> :int]]
+(infer '(+ 1 1))
+; => :int
+(infer '(fn [x] x))
+; => [t0 -> t0]
+(infer '(fn [x y] (+ x y)))
+; => [:int -> [:int -> :int]]
+(infer '(let [f (fn [x] x)] f))
+; => [t0 -> t0]
+(infer '(if true 42 (+ 333 333)))
+; => :int
+(infer '())
+; => (:list t0)
+(infer '(empty? ()))
+; :bool
+(infer '(empty? (cons 1 ())))
+; => :bool
+(infer '(cons 1 ()))
+; => (:list :int)
+(infer '(first (cons 1 ())))
+; => :int
+(infer '(rest (cons 1 ())))
+; => (:list :int)
+(infer
+ '(let [fact (fix
+              (fn [fact x]
+                (if (= x 1)
+                  1
+                  (* x (fact (- x 1))))))]
+    (fact 10)))
+; => :int
+
+;; Tests used in `infer.ss` by Yin Wang
+(infer '(fn [f x] (f x)))
+; => [[t0 -> t1] -> [t0 -> t1]]
+(infer '(fn [f x] (f (f x))))
+; FAILED => [[t0 -> t1] -> [t0 -> t2]]
+; expected: [[t0 -> t0] -> [t0 -> t0]]
+(infer '(fn [m n f x] ((m (n f)) x)))
+;; => [[t0 -> [t1 -> t2]] -> [[t3 -> t0] -> [t3 -> [t1 -> t2]]]]
+(infer '((fn [f] (f 1)) (fn [v] v)))
+;; => :int
+(def S '(fn [x y z] ((x z) (y z))))
+(def K '(fn [x y] x))
+(infer S)
+; => [[t0 -> [t1 -> t2]] -> [[t0 -> t1] -> [t0 -> t2]]]
+(infer `(~S ~K))
+; FAILED => [[t0 -> t1] -> [t0 -> t2]]
+; expected: [[t0 -> t1] -> [t0 -> t0]]
+(infer `((~S ~K) ~K))
+; FAILED => [t0 -> t1]
+; expected: [t0 -> t0]
+
 
 ;; one-liner to clear current namespace
 ;; (map #(ns-unmap *ns* %) (keys (ns-interns *ns*)))
