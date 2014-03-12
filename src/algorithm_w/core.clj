@@ -80,8 +80,6 @@
 
 (defmulti unify (fn [x y] [(type x) (type y)]))
 
-(defmethod unify [::type-var ::type-var] [t1 t2] {})
-
 (defmethod unify [::type-var ::_] [t1 t2]
   (if (contains? (ftv t2) t1)
     (throw (circular-unify t1 t2))
@@ -112,9 +110,7 @@
       (throw (cannot-unify t1 t2)))
     :else (throw (cannot-unify t1 t2))))
 
-(prefer-method unify [::type-var ::type-var] [::type-var ::_])
-(prefer-method unify [::type-var ::type-var] [::_ ::type-var])
-(prefer-method unify [::type-var ::_]        [::_ ::type-var])
+(prefer-method unify [::type-var ::_] [::_ ::type-var])
 
 ;;; W
 
@@ -252,8 +248,7 @@
 (infer '(fn [f x] (f x)))
 ; => [[t0 -> t1] -> [t0 -> t1]]
 (infer '(fn [f x] (f (f x))))
-; FAILED => [[t0 -> t1] -> [t0 -> t2]]
-; expected: [[t0 -> t0] -> [t0 -> t0]]
+; => [[t0 -> t0] -> [t0 -> t0]]
 (infer '(fn [m n f x] ((m (n f)) x)))
 ;; => [[t0 -> [t1 -> t2]] -> [[t3 -> t0] -> [t3 -> [t1 -> t2]]]]
 (infer '((fn [f] (f 1)) (fn [v] v)))
@@ -263,11 +258,9 @@
 (infer S)
 ; => [[t0 -> [t1 -> t2]] -> [[t0 -> t1] -> [t0 -> t2]]]
 (infer `(~S ~K))
-; FAILED => [[t0 -> t1] -> [t0 -> t2]]
-; expected: [[t0 -> t1] -> [t0 -> t0]]
+; => [[t0 -> t1] -> [t0 -> t0]]
 (infer `((~S ~K) ~K))
-; FAILED => [t0 -> t1]
-; expected: [t0 -> t0]
+; => [t0 -> t0]
 
 
 ;; one-liner to clear current namespace
