@@ -6,15 +6,15 @@ Use the Source, Luke!
 
 ``` clojure
 (infer '+)
-; => [:int -> [:int -> :int]]
+; => (:int -> (:int -> :int))
 (infer '(+ 1 1))
 ; => :int
 (infer '(fn [x] x))
-; => [t0 -> t0]
+; => (t0 -> t0)
 (infer '(fn [x y] (+ x y)))
-; => [:int -> [:int -> :int]]
+; => (:int -> (:int -> :int))
 (infer '(let [f (fn [x] x)] f))
-; => [t0 -> t0]
+; => (t0 -> t0)
 (infer '(if true 42 (+ 333 333)))
 ; => :int
 (infer '())
@@ -40,21 +40,21 @@ Use the Source, Luke!
 
 ;; Tests used in `infer.ss` by Yin Wang
 (infer '(fn [f x] (f x)))
-; => [[t0 -> t1] -> [t0 -> t1]]
+; => ((t0 -> t1) -> (t0 -> t1))
 (infer '(fn [f x] (f (f x))))
-; => [[t0 -> t0] -> [t0 -> t0]]
+; => ((t0 -> t0) -> (t0 -> t0))
 (infer '(fn [m n f x] ((m (n f)) x)))
-;; => [[t0 -> [t1 -> t2]] -> [[t3 -> t0] -> [t3 -> [t1 -> t2]]]]
+;; => ((t0 -> (t1 -> t2)) -> ((t3 -> t0) -> (t3 -> (t1 -> t2))))
 (infer '((fn [f] (f 1)) (fn [v] v)))
 ;; => :int
 (def S '(fn [x y z] ((x z) (y z))))
 (def K '(fn [x y] x))
 (infer S)
-; => [[t0 -> [t1 -> t2]] -> [[t0 -> t1] -> [t0 -> t2]]]
+; => ((t0 -> (t1 -> t2)) -> ((t0 -> t1) -> (t0 -> t2)))
 (infer `(~S ~K))
-; => [[t0 -> t1] -> [t0 -> t0]]
+; => ((t0 -> t1) -> (t0 -> t0))
 (infer `((~S ~K) ~K))
-; => [t0 -> t0]
+; => (t0 -> t0)
 ```
 
 ## References
